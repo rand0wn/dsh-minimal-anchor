@@ -1,0 +1,5 @@
+# Bundle patch: self-inserts this plugin into a profile that lists this
+# package under its bundles, so installing it is enough to activate it.
+- insert:
+    - id: minimal-anchor
+      name: 'dsh-minimal-anchor'

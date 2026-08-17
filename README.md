@@ -1,0 +1,112 @@
+# dsh-minimal-anchor
+
+A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugin that shields turn 1 from tool-schema overload.
+
+## Why
+
+A fresh `dsh` session hands the model the *entire* configured toolset — file
+edits, bash, subagents, jobs — on message one, even when the first message is
+just "look at this repo and tell me what's going on." A smaller, focused
+schema on that first turn keeps the model's early reasoning on exploration
+instead of premature action, without touching how any later turn behaves.
+
+`dsh-minimal-anchor` hooks the harness's own prompt-assembly pipeline to:
+
+1. **Prune tools on turn 1 only** — down to a configurable whitelist (default: `read`, `glob`, `grep`).
+2. **Prepend a short structural preamble** on that same turn, framing the session as exploration-first.
+3. **Get out of the way from turn 2 onward** — every later assembly for that session passes through completely untouched, full toolset restored.
+
+## Install
+
+```bash
+dsh plugin --profile <name> add dsh-minimal-anchor
+```
+
+or from a local checkout:
+
+```bash
+dsh plugin --profile <name> add /path/to/dsh-minimal-anchor
+```
+
+This adds the package as a dependency of the profile, but does **not** by
+itself activate it — `dsh` only applies a package's `dsh.bundle` patch for
+packages listed in that profile's `dsh.profile.bundles`. Add the package
+name to that list in `profiles/<name>/package.json`:
+
+```json
+{
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-headless",
+        "dsh-minimal-anchor"
+      ]
+    }
+  }
+}
+```
+
+Confirm it composed with `dsh --profile <name> --dump-config` — you should
+see a `minimal-anchor` entry. (An equivalent alternative that skips the
+bundles list entirely: insert it directly in your own
+`profiles/<name>/cordis.patch.yml` — see [Configuration](#configuration).)
+
+## Usage
+
+Nothing to invoke — it's a passive plugin. Boot your profile as usual
+(`dsh web`, `dsh --profile headless "..."`, etc.) and the first turn of every
+new session goes out with the pruned tool list and preamble automatically.
+
+## Configuration
+
+```yaml
+# profiles/<name>/cordis.patch.yml
+- insert:
+    - id: minimal-anchor
+      name: 'dsh-minimal-anchor'
+      config:
+        whitelistedTools: [read, glob, grep]
+        enforcePreamble: true
+        customPreamble: 'Your own turn-1 framing text.'
+```
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `whitelistedTools` | `[read, glob, grep]` | Tool names kept on turn 1. Must match the exact registered tool names in your profile — check `dsh --profile <name> --dump-config` if unsure, names differ from plugin to plugin. |
+| `enforcePreamble` | `true` | Whether to prepend the structural preamble section on turn 1. |
+| `customPreamble` | (built-in exploration-framing text) | Preamble text, used only when `enforcePreamble` is `true`. |
+
+## How it works
+
+Hooks the `system-prompt/assemble` waterfall from
+[`@deepseek-ai/dsh-system-prompt`](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/system-prompt),
+which runs once per turn and produces the `PromptAssembly` (sections, tools,
+contexts) actually sent to the model. A `WeakSet` keyed on the assembly's
+scope tracks whether that scope has assembled before; the first time, it
+filters `assembly.tools` to the whitelist and unshifts the preamble section,
+then calls `next()` so every other listener in the waterfall still runs
+normally. Every later assembly for that scope short-circuits straight to
+`next()` — no mutation, no persisted per-session state beyond the WeakSet
+entry, which needs no explicit teardown since it dies with the scope object.
+
+There is no `agent/request` or per-message hook in the real harness — this
+plugin does not use one, unlike an earlier draft of this same idea that
+assumed events that don't exist in `dsh`.
+
+## Development
+
+```bash
+pnpm install
+pnpm run build       # emit lib/ from src/
+pnpm run typecheck   # type-check only
+```
+
+Verified against a real local `dsh` boot (not just types): installed into a
+scratch profile, patched in, and run against a live model — the outbound
+request on turn 1 carried exactly the whitelisted tools and the preamble
+text, and turn 2 carried the full toolset with no preamble.
+
+## License
+
+MIT
