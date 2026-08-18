@@ -1,5 +1,7 @@
 # dsh-minimal-anchor
 
+[![CI](https://github.com/rand0wn/dsh-minimal-anchor/actions/workflows/ci.yml/badge.svg)](https://github.com/rand0wn/dsh-minimal-anchor/actions/workflows/ci.yml)
+
 A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugin that shields turn 1 from tool-schema overload.
 
 ## Why
@@ -94,12 +96,34 @@ There is no `agent/request` or per-message hook in the real harness — this
 plugin does not use one, unlike an earlier draft of this same idea that
 assumed events that don't exist in `dsh`.
 
+## Troubleshooting
+
+**Turn 1's tool list came back empty.** `whitelistedTools` matches on the
+exact registered tool name — these differ per harness install and per other
+plugins you have active. Check the real names with
+`dsh --profile <name> --dump-config`, or open the Trajectory tab in the web
+UI for a session and look at the Tools panel on "Initial System Prompt". An
+early draft of this plugin shipped with guessed names (`read_file`,
+`list_dir`, `search_files`) that don't exist in the real harness — the
+whitelist silently matched nothing and pruned every tool.
+
+**Plugin doesn't seem to load / no `minimal-anchor` entry in `--dump-config`.**
+Being a listed `dependency` of the profile (e.g. after `dsh plugin add`) is
+not enough — the package also needs to be in that profile's
+`dsh.profile.bundles` list (see [Install](#install)) before its `dsh.bundle`
+patch gets applied.
+
+**Loader crashes with `Cannot read properties of undefined (reading 'validate')`
+on a fork.** A Cordis plugin's exported `Config` must be a schemastery
+schema (`z.object({...})`), not a plain object — the loader calls
+`.validate` on whatever `Config` exports.
+
 ## Development
 
 ```bash
-pnpm install
-pnpm run build       # emit lib/ from src/
-pnpm run typecheck   # type-check only
+npm install
+npm run typecheck
+npm test
 ```
 
 Verified against a real local `dsh` boot (not just types): installed into a
