@@ -79,6 +79,10 @@ new session goes out with the pruned tool list and preamble automatically.
 | `enforcePreamble` | `true` | Whether to prepend the structural preamble section on turn 1. |
 | `customPreamble` | (built-in exploration-framing text) | Preamble text, used only when `enforcePreamble` is `true`. |
 
+Extending rather than replacing the default whitelist? `DEFAULT_WHITELISTED_TOOLS`
+and `DEFAULT_PREAMBLE` are exported from the package if you're composing config
+in TypeScript rather than YAML.
+
 ## How it works
 
 Hooks the `system-prompt/assemble` waterfall from

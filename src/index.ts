@@ -20,14 +20,17 @@ export interface Config {
   customPreamble: string
 }
 
+export const DEFAULT_WHITELISTED_TOOLS = ['read', 'glob', 'grep']
+
+export const DEFAULT_PREAMBLE =
+  'SYSTEM INITIALIZATION MODE: You are operating in clean execution state. ' +
+  'Focus purely on codebase exploration, file verification, and structural logical planning. ' +
+  'Avoid verbose commentary or unrequested refactors until core context is established.'
+
 export const Config: z<Config> = z.object({
-  whitelistedTools: z.array(z.string()).default(['read', 'glob', 'grep']),
+  whitelistedTools: z.array(z.string()).default(DEFAULT_WHITELISTED_TOOLS),
   enforcePreamble: z.boolean().default(true),
-  customPreamble: z.string().default(
-    'SYSTEM INITIALIZATION MODE: You are operating in clean execution state. ' +
-      'Focus purely on codebase exploration, file verification, and structural logical planning. ' +
-      'Avoid verbose commentary or unrequested refactors until core context is established.',
-  ),
+  customPreamble: z.string().default(DEFAULT_PREAMBLE),
 })
 
 export const PREAMBLE_SECTION_NAME = 'dsh-minimal-anchor:preamble'
