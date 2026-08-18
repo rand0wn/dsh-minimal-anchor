@@ -30,6 +30,27 @@ export const Config: z<Config> = z.object({
   ),
 })
 
+export const PREAMBLE_SECTION_NAME = 'dsh-minimal-anchor:preamble'
+
+/**
+ * Pure transform: prune `assembly.tools` to the whitelist and, if enabled,
+ * unshift the preamble section. Mutates and returns the same assembly object
+ * (matching PromptAssembly's mutable-in-place shape), split out from the
+ * Cordis event handler so it's testable without booting a Context.
+ */
+export function applyAnchor(assembly: PromptAssembly, config: Config): PromptAssembly {
+  assembly.tools = assembly.tools.filter((tool) => config.whitelistedTools.includes(tool.name))
+
+  if (config.enforcePreamble) {
+    assembly.sections = [
+      { name: PREAMBLE_SECTION_NAME, text: config.customPreamble },
+      ...assembly.sections,
+    ]
+  }
+
+  return assembly
+}
+
 export function apply(ctx: Context, config: Config) {
   const logger = ctx.logger('dsh-minimal-anchor')
 
@@ -52,17 +73,9 @@ export function apply(ctx: Context, config: Config) {
     }
 
     logger.info('First assembly for scope — applying minimal anchor.')
-
     const originalCount = assembly.tools.length
-    assembly.tools = assembly.tools.filter((tool) => config.whitelistedTools.includes(tool.name))
+    applyAnchor(assembly, config)
     logger.info(`Pruned tool schema: ${originalCount} -> ${assembly.tools.length} primitives.`)
-
-    if (config.enforcePreamble) {
-      assembly.sections = [
-        { name: 'dsh-minimal-anchor:preamble', text: config.customPreamble },
-        ...assembly.sections,
-      ]
-    }
 
     // Standard Cordis waterfall shape: mutate the assembly, then hand off to
     // the next listener/default via next() — matches dsh-system-prompt's own
