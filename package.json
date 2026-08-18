@@ -12,8 +12,17 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib/index.js",
+    "lib/index.d.ts",
+    "lib/index.js.map",
+    "lib/index.d.ts.map"
   ],
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -21,7 +30,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build && node --test lib/index.test.js"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
@@ -32,6 +42,7 @@
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-system-prompt": "^0.1.0-rc.6",
     "@deepseek-ai/schemastery": "^3.18.1",
+    "@types/node": "^26.2.0",
     "typescript": "^5.9.0"
   }
 }
