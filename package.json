@@ -8,6 +8,18 @@
     "cordis"
   ],
   "license": "MIT",
+  "author": "Abhishek Singh Kushwah",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rand0wn/dsh-minimal-anchor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rand0wn/dsh-minimal-anchor/issues"
+  },
+  "homepage": "https://github.com/rand0wn/dsh-minimal-anchor#readme",
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
